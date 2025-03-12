@@ -28,6 +28,7 @@ public class Scene {
 	private int indexBuffer;
 	private Vector3f[] colours;
 	private int colourBuffer;
+	private Matrix4f modelMatrix;
 
 	private Shader shader;
 
@@ -78,14 +79,25 @@ public class Scene {
 
 		indexBuffer = GLBuffers.createIndexBuffer(indices);
 
+		modelMatrix = new Matrix4f();
+		Matrix4f affineMatrix = new Matrix4f(); 
+		
+		Scene.translationMatrix(-0.6f, 0.6f, affineMatrix);
+		modelMatrix.mul(affineMatrix);
+		Scene.rotationMatrix((float) Math.toRadians(45f), affineMatrix);
+		modelMatrix.mul(affineMatrix);
+		Scene.scaleMatrix(0.5f, 0.5f, affineMatrix);
+		modelMatrix.mul(affineMatrix);
 	}
 
-	public void draw() {
-		
+	public void draw()
+	{		
 		shader.enable();
 		// set the attributes
 		shader.setAttribute("a_position", vertexBuffer);
 		shader.setAttribute("a_colour", colourBuffer);
+
+		shader.setUniform("u_modelMatrix", modelMatrix);
 
 		// draw using index buffer
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
@@ -105,13 +117,14 @@ public class Scene {
 	 * @return
 	 */
 
-	public static Matrix4f translationMatrix(float tx, float ty, Matrix4f dest) {
+	public static Matrix4f translationMatrix(float tx, float ty, Matrix4f dest)
+	{
 		// clear the matrix to the identity matrix
 		dest.identity();
 
 		//     [ 1 0 0 tx ]
 		// T = [ 0 1 0 ty ]
-	    //     [ 0 0 0 0  ]
+	    //     [ 0 0 1 0  ]
 		//     [ 0 0 0 1  ]
 
 		// Perform operations on only the x and y values of the T vec. 
@@ -132,9 +145,26 @@ public class Scene {
 	 * @return
 	 */
 
-	public static Matrix4f rotationMatrix(float angle, Matrix4f dest) {
+	public static Matrix4f rotationMatrix(float angle, Matrix4f dest)
+	{
+		// clear the matrix to the identity matrix
+		dest.identity();
 
-		// TODO: Your code here
+		//     [ cos(a) -sin(a) 0 0 ]
+		// T = [ sin(a) cos(a)  0 0 ]
+	    //     [ 0      0       1 0 ]
+		//     [ 0      0       0 1 ]
+
+		// Perform operations on only the x and y values of the i and j vecs. 
+		// Leaves the z value alone, as we are only doing 2D transformations.
+		
+		float sina = (float) Math.sin(angle);
+		float cosa = (float) Math.cos(angle);
+		
+		dest.m00(cosa);
+		dest.m01(sina);
+		dest.m10(-sina);
+		dest.m11(cosa);
 
 		return dest;
 	}
@@ -149,11 +179,22 @@ public class Scene {
 	 * @return
 	 */
 
-	public static Matrix4f scaleMatrix(float sx, float sy, Matrix4f dest) {
+	public static Matrix4f scaleMatrix(float sx, float sy, Matrix4f dest)
+	{
+		// clear the matrix to the identity matrix
+		dest.identity();
 
-		// TODO: Your code here
+		//	   [ sx 0  0 0 ]
+		// T = [ 0  sy 0 0 ]
+	    //     [ 0  0  0 0 ]
+		//     [ 0  0  0 1 ]
+
+		// Perform operations on only the x and y values of the i and j vecs. 
+		// Leaves the z value alone, as we are only doing 2D transformations.
+
+		dest.m00(sx);
+		dest.m11(sy);
 
 		return dest;
 	}
-
 }
