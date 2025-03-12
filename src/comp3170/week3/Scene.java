@@ -28,7 +28,15 @@ public class Scene {
 	private int indexBuffer;
 	private Vector3f[] colours;
 	private int colourBuffer;
-	private Matrix4f modelMatrix;
+	private Matrix4f modelMatrix = new Matrix4f();
+	private Matrix4f affineMatrix = new Matrix4f(); 
+	
+	long oldTime; // previous frame's time
+	
+	private static final float DISTANCE_FROM_CENTER = 1f; 
+	private static final float ROTATION_SPEED = 10f; 
+	private static final float MODEL_SIZE = 0.25f;
+	private float currentRotation = 0f;
 
 	private Shader shader;
 
@@ -78,20 +86,14 @@ public class Scene {
 			// @formatter:on
 
 		indexBuffer = GLBuffers.createIndexBuffer(indices);
-
-		modelMatrix = new Matrix4f();
-		Matrix4f affineMatrix = new Matrix4f(); 
 		
-		Scene.translationMatrix(-0.6f, 0.6f, affineMatrix);
-		modelMatrix.mul(affineMatrix);
-		Scene.rotationMatrix((float) Math.toRadians(45f), affineMatrix);
-		modelMatrix.mul(affineMatrix);
-		Scene.scaleMatrix(0.5f, 0.5f, affineMatrix);
-		modelMatrix.mul(affineMatrix);
+		oldTime = System.currentTimeMillis();
 	}
 
 	public void draw()
 	{		
+		update();
+		
 		shader.enable();
 		// set the attributes
 		shader.setAttribute("a_position", vertexBuffer);
@@ -105,6 +107,33 @@ public class Scene {
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glDrawElements(GL_TRIANGLES, indices.length, GL_UNSIGNED_INT, 0);
 
+	}
+	
+	public void update()
+	{
+		// calculate seconds since last frame
+		long time = System.currentTimeMillis();
+		float deltaTime = (time - oldTime) / 1000f;
+		oldTime = time;
+		
+		System.out.println(currentRotation);
+		
+		currentRotation += ROTATION_SPEED * deltaTime;
+
+		modelMatrix.identity();
+		
+		Scene.scaleMatrix(MODEL_SIZE, MODEL_SIZE, affineMatrix);
+		modelMatrix.mul(affineMatrix);
+		
+		Scene.rotationMatrix((float) Math.toRadians(currentRotation), affineMatrix);
+		modelMatrix.mul(affineMatrix);
+		
+		Scene.translationMatrix(DISTANCE_FROM_CENTER, 0, affineMatrix);
+		modelMatrix.mul(affineMatrix);
+		//Scene.translationMatrix(MOVE_SPEED * deltaTime, 0, affineMatrix);
+		//modelMatrix.mul(affineMatrix);
+		
+		
 	}
 
 	/**
